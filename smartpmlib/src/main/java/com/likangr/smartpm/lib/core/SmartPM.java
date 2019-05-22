@@ -18,9 +18,9 @@ public class SmartPM {
 
     private static final String TAG = "SmartPM";
 
-    private static ArrayList<PMOperation> PM_OPERATION_QUEUE = new ArrayList<>();
+    private static final ArrayList<PMOperation> PM_OPERATION_QUEUE = new ArrayList<>();
 
-    static PMOperation CURRENT_RUNNING_PM_OPERATION;
+    public static PMOperation sCurrentRunningPMOperation;
     private static final Object INITIALISE_LOCK = new Object();
     private static Handler sHandler;
     private static boolean sIsInitialised = false;
@@ -66,7 +66,7 @@ public class SmartPM {
             public void run() {
                 checkPMOperationIsValid(pmOperation);
                 PM_OPERATION_QUEUE.add(pmOperation);
-                if (CURRENT_RUNNING_PM_OPERATION == null) {
+                if (sCurrentRunningPMOperation == null) {
                     executeNextPMOperationIfHas();
                 }
             }
@@ -111,14 +111,14 @@ public class SmartPM {
     /**
      *
      */
-    static void executeNextPMOperationIfHas() {
-        if (CURRENT_RUNNING_PM_OPERATION != null) {
-            PM_OPERATION_QUEUE.remove(CURRENT_RUNNING_PM_OPERATION);
-            CURRENT_RUNNING_PM_OPERATION = null;
+    public static void executeNextPMOperationIfHas() {
+        if (sCurrentRunningPMOperation != null) {
+            PM_OPERATION_QUEUE.remove(sCurrentRunningPMOperation);
+            sCurrentRunningPMOperation = null;
         }
         if (!PM_OPERATION_QUEUE.isEmpty()) {
-            CURRENT_RUNNING_PM_OPERATION = PM_OPERATION_QUEUE.get(0);
-            CURRENT_RUNNING_PM_OPERATION.run();
+            sCurrentRunningPMOperation = PM_OPERATION_QUEUE.get(0);
+            sCurrentRunningPMOperation.run();
         }
     }
 

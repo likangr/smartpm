@@ -19,7 +19,7 @@ import java.io.InputStream;
 /**
  * @author likangren
  */
-public class DemoActivity extends AppCompatActivity implements PMOperation.PMOperationCallback {
+public class MainActivity extends AppCompatActivity implements PMOperation.PMOperationCallback {
 
     private static final String TAG = "DemoActivity";
     private ProgressBar mPbWait;
@@ -27,7 +27,7 @@ public class DemoActivity extends AppCompatActivity implements PMOperation.PMOpe
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_demo);
+        setContentView(R.layout.activity_main);
         mPbWait = findViewById(R.id.pb_wait);
         try {
             copyApk(true);

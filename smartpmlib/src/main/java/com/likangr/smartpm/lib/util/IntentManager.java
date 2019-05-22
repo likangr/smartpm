@@ -1,6 +1,5 @@
 package com.likangr.smartpm.lib.util;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
 import android.content.ComponentName;
@@ -78,24 +77,26 @@ public class IntentManager {
     /**
      * @param packageArchiveLocalPath
      */
-    public static void gotoInstallPackageActivity(String packageArchiveLocalPath) {
-        Application application = ApplicationHolder.getApplication();
+    public static void gotoInstallPackageActivity(Context context, String packageArchiveLocalPath) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        Uri uri = IntentManager.getFileUri(application, packageArchiveLocalPath, intent);
+        if (!(context instanceof Activity)) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+        Uri uri = IntentManager.getFileUri(context, packageArchiveLocalPath, intent);
         intent.setDataAndType(uri, "application/vnd.android.package-archive");
-        application.startActivity(intent);
+        context.startActivity(intent);
     }
 
     /**
      * @param packageName
      */
-    public static void gotoRemovePackageActivity(String packageName) {
-        Application application = ApplicationHolder.getApplication();
+    public static void gotoRemovePackageActivity(Context context, String packageName) {
         Intent intent = new Intent(Intent.ACTION_DELETE);
         intent.setData(Uri.parse(String.format("package:%s", packageName)));
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        application.startActivity(intent);
+        if (!(context instanceof Activity)) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+        context.startActivity(intent);
     }
 
     /**
@@ -142,14 +143,26 @@ public class IntentManager {
     /**
      * @param context
      */
-    @TargetApi(Build.VERSION_CODES.O)
     public static void gotoInstallPermissionSettingActivity(Context context) {
-        Uri uri = Uri.parse("package:" + context.getPackageName());
-        Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, uri);
+        Intent intent = new Intent();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Uri uri = Uri.parse("package:" + context.getPackageName());
+            intent.setAction(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+            intent.setData(uri);
+        } else {
+            intent.setAction(Settings.ACTION_SECURITY_SETTINGS);
+        }
         if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
-        context.startActivity(intent);
+
+        try {
+            context.startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            intent.setAction(Settings.ACTION_SETTINGS);
+            context.startActivity(intent);
+        }
     }
 
     /**

@@ -1,9 +1,9 @@
 package com.likangr.smartpm.lib.util;
 
-import android.annotation.TargetApi;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.provider.Settings;
 
 /**
  * @author likangren
@@ -35,8 +35,13 @@ public class PackageUtil {
     /**
      * @return
      */
-    @TargetApi(Build.VERSION_CODES.O)
     public static boolean canRequestPackageInstalls() {
-        return ApplicationHolder.getApplication().getPackageManager().canRequestPackageInstalls();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return ApplicationHolder.getApplication().getPackageManager().canRequestPackageInstalls();
+        } else {
+            return Settings.Secure.getInt(ApplicationHolder.getApplication().getContentResolver(),
+                    Settings.Secure.INSTALL_NON_MARKET_APPS, 0) == 1;
+        }
+
     }
 }

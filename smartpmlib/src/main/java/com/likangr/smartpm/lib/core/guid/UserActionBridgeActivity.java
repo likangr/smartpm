@@ -3,6 +3,7 @@ package com.likangr.smartpm.lib.core.guid;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -74,8 +75,14 @@ public class UserActionBridgeActivity extends AppCompatActivity {
             case USER_ACTION_CODE_ENABLE_INSTALL_UNKNOWN_SOURCES:
                 sendCheckUserHasDoneSignal();
                 IntentManager.gotoInstallPermissionSettingActivity(this);
-                UserActionGuideToast.show(this, "需要先允许" + getString(R.string.install_unknown_sources),
-                        "操作指南：\n找到并开启" + getString(R.string.allow_sources), Toast.LENGTH_LONG);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    UserActionGuideToast.show(this, "需要先允许" + getString(R.string.install_unknown_sources),
+                            "操作指南：\n找到并开启" + getString(R.string.allow_sources), Toast.LENGTH_LONG);
+                } else {
+                    UserActionGuideToast.show(this, "需要先允许" + getString(R.string.install_unknown_sources),
+                            "操作指南：\n找到并开启" + getString(R.string.install_unknown_sources), Toast.LENGTH_LONG);
+                }
+
                 break;
             default:
                 break;

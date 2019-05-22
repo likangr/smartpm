@@ -28,7 +28,7 @@ public class UserActionGuideToast {
      * @param actionTip
      * @param duration
      */
-    static void show(Context context, String actionTitle, String actionTip, int duration) {
+    public static void show(Context context, String actionTitle, String actionTip, int duration) {
         dismiss();
         sToast = Toast.makeText(context, null, duration);
         sToast.setGravity(Gravity.FILL_HORIZONTAL | Gravity.BOTTOM, 0, 0);
@@ -72,7 +72,7 @@ public class UserActionGuideToast {
     }
 
 
-    static void dismiss() {
+    public static void dismiss() {
         if (sToast != null) {
             sToast.cancel();
         }

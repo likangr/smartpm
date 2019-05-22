@@ -2,21 +2,14 @@ package com.likangr.smartpm.lib.core;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 
 import com.likangr.smartpm.lib.core.guid.UserActionBridgeActivity;
 import com.likangr.smartpm.lib.util.AccessibilityUtil;
 import com.likangr.smartpm.lib.util.ApplicationHolder;
 import com.likangr.smartpm.lib.util.IntentManager;
-import com.likangr.smartpm.lib.util.Logger;
 import com.likangr.smartpm.lib.util.PackageUtil;
 
 /**
@@ -33,7 +26,7 @@ public class PMOperation implements Runnable {
     public String mPackageArchiveLocalPath;
     public Object mExtraData;
     public int mOperationType;
-    public long mLastUpdateTime = -1;
+    public long mLastUpdateTime;
     public boolean mIsUpdate;
     private PMOperationCallback mPMOperationCallback;
 
@@ -126,8 +119,7 @@ public class PMOperation implements Runnable {
 
     @Override
     public void run() {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.N_MR1 &&
-                mOperationType == TYPE_PM_OPERATION_INSTALL_PACKAGE &&
+        if (mOperationType == TYPE_PM_OPERATION_INSTALL_PACKAGE &&
                 !PackageUtil.canRequestPackageInstalls()) {
             IntentManager.gotoUserActionBridgeActivity(
                     UserActionBridgeActivity.USER_ACTION_CODE_ENABLE_INSTALL_UNKNOWN_SOURCES,
@@ -199,25 +191,24 @@ public class PMOperation implements Runnable {
      */
     private void performRealOperation() {
         callOnOperationStart();
+        Application application = ApplicationHolder.getApplication();
         switch (mOperationType) {
             case TYPE_PM_OPERATION_INSTALL_PACKAGE:
-                IntentManager.gotoInstallPackageActivity(mPackageArchiveLocalPath);
+                IntentManager.gotoInstallPackageActivity(application, mPackageArchiveLocalPath);
                 break;
             case TYPE_PM_OPERATION_REMOVE_PACKAGE:
-                IntentManager.gotoRemovePackageActivity(mPackageName);
+                IntentManager.gotoRemovePackageActivity(application, mPackageName);
                 break;
             default:
                 break;
         }
-//        sendCheckOperationHasDoneSignal();
-        listenPackageChangedAction();
-        listenUserCancelOperationAction();
+        listenPackageOperationAction();
     }
 
     /**
      *
      */
-    private void listenUserCancelOperationAction() {
+    private void listenPackageOperationAction() {
         final Application application = ApplicationHolder.getApplication();
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
@@ -233,6 +224,27 @@ public class PMOperation implements Runnable {
             @Override
             public void onActivityResumed(Activity activity) {
                 application.unregisterActivityLifecycleCallbacks(this);
+
+                switch (mOperationType) {
+                    case PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE:
+                        PackageInfo installedPackageInfo = PackageUtil.getInstalledPackageInfo(mPackageName);
+                        if (installedPackageInfo != null && mLastUpdateTime != installedPackageInfo.lastUpdateTime) {
+                            callOnOperationSuccess();
+                        } else {
+                            callOnOperationFail();
+                        }
+                        break;
+                    case PMOperation.TYPE_PM_OPERATION_REMOVE_PACKAGE:
+                        if (!PackageUtil.packageIsInstalled(mPackageName)) {
+                            callOnOperationSuccess();
+                        } else {
+                            callOnOperationFail();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
             }
 
             @Override
@@ -256,76 +268,6 @@ public class PMOperation implements Runnable {
             }
         });
     }
-
-    /**
-     *
-     */
-    private void listenPackageChangedAction() {
-        final Application application = ApplicationHolder.getApplication();
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(mOperationType == TYPE_PM_OPERATION_INSTALL_PACKAGE ?
-                (!mIsUpdate ? Intent.ACTION_PACKAGE_ADDED : Intent.ACTION_PACKAGE_REPLACED) :
-                Intent.ACTION_PACKAGE_REMOVED);
-
-        intentFilter.addDataScheme("package");
-        application.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Uri intentData = intent.getData();
-                if (intentData == null) {
-                    Logger.w(TAG, "IntentData is null from received action.");
-                    return;
-                }
-                if (!mPackageName.equals(intentData.getSchemeSpecificPart())) {
-                    return;
-                }
-                application.unregisterReceiver(this);
-                callOnOperationSuccess();
-            }
-        }, intentFilter);
-
-    }
-
-    private void sendCheckOperationHasDoneSignal() {
-        SmartPM.getHandler().postDelayed(mCheckOperationHasDoneRunnable, 200);
-    }
-
-    private Runnable mCheckOperationHasDoneRunnable = new Runnable() {
-        @Override
-        public void run() {
-
-            switch (mOperationType) {
-                case TYPE_PM_OPERATION_INSTALL_PACKAGE:
-
-                    if (!mIsUpdate) {
-                        boolean packageIsInstalled = PackageUtil.packageIsInstalled(mPackageName);
-
-                    } else {
-
-                        PackageInfo installedPackageInfo = PackageUtil.getInstalledPackageInfo(mPackageName);
-
-                        if (installedPackageInfo != null && mLastUpdateTime != installedPackageInfo.lastUpdateTime) {
-                            callOnOperationSuccess();
-                        } else {
-                            callOnOperationFail();
-                        }
-                    }
-
-                    break;
-                case TYPE_PM_OPERATION_REMOVE_PACKAGE:
-                    if (!PackageUtil.packageIsInstalled(mPackageName)) {
-                        callOnOperationSuccess();
-                    } else {
-                        callOnOperationFail();
-                    }
-                    break;
-                default:
-                    break;
-            }
-
-        }
-    };
 
     /**
      *
@@ -390,8 +332,9 @@ public class PMOperation implements Runnable {
                 ", mPackageArchiveLocalPath='" + mPackageArchiveLocalPath + '\'' +
                 ", mExtraData=" + mExtraData +
                 ", mOperationType=" + mOperationType +
-                ", mPMOperationCallback=" + mPMOperationCallback +
                 ", mLastUpdateTime=" + mLastUpdateTime +
+                ", mIsUpdate=" + mIsUpdate +
+                ", mPMOperationCallback=" + mPMOperationCallback +
                 '}';
     }
 }
