@@ -1,0 +1,7 @@
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeViewScrolled|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackAllMask"
+    android:accessibilityFlags="flagEnableAccessibilityVolume|flagIncludeNotImportantViews|flagRequestEnhancedWebAccessibility|flagRequestFilterKeyEvents|flagReportViewIds|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/smartpm_service_description"
+    android:notificationTimeout="100" />

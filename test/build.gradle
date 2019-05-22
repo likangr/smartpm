@@ -1,0 +1,43 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        flavorDimensions "FORM"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    productFlavors {
+        independent {
+            resValue "string", "app_name", "testIndependentApp"
+            applicationId "com.likangr.smartpm.test"
+            manifestPlaceholders = [APP_START_CATEGORY: "android.intent.category.LAUNCHER", APP_START_ACTION: "android.intent.action.MAIN"]
+        }
+        plugin {
+            resValue "string", "app_name", "testPluginApp"
+            applicationId "com.likangr.smartpm.test.plugin"
+            manifestPlaceholders = [APP_START_CATEGORY: "android.intent.category.DEFAULT", APP_START_ACTION: "smartpm.${applicationId}.intent.action.MAIN"]
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.core:core-ktx:1.0.2'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+}

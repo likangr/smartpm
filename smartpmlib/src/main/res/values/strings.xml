@@ -1,0 +1,50 @@
+<resources>
+
+    <string name="auto_service_install">安装</string>
+    <string name="auto_service_ok">确定</string>
+    <string name="auto_service_ensure">确认</string>
+    <string name="auto_service_next">下一步</string>
+    <string name="auto_service_replace">替换</string>
+    <string name="auto_service_update">更新</string>
+    <string name="auto_service_done">完成</string>
+    <string name="auto_service_allow">允许</string>
+    <string name="auto_service_remove">卸载</string>
+    <string name="auto_service_know">知道</string>
+    <string name="auto_service_continue">继续</string>
+    <string name="auto_service_failed">失败</string>
+
+    <string name="upper_case_auto_service_install">INSTALL</string>
+    <string name="upper_case_auto_service_ok">OK</string>
+    <string name="upper_case_auto_service_next">NEXT</string>
+    <string name="upper_case_auto_service_replace">REPLACE</string>
+    <string name="upper_case_auto_service_update">UPDATE</string>
+    <string name="upper_case_auto_service_done">DONE</string>
+    <string name="upper_case_auto_service_allow">ALLOW</string>
+    <string name="upper_case_auto_service_remove">UNINSTALL</string>
+    <string name="upper_case_auto_service_remove2">REMOVE</string>
+    <string name="upper_case_auto_service_know">KNOW</string>
+    <string name="upper_case_auto_service_continue">CONTINUE</string>
+    <string name="upper_case_auto_service_fail">FAIL</string>
+    <string name="upper_case_auto_service_failed">FAILED</string>
+    <string name="upper_case_auto_service_failure">FAILURE</string>
+
+    <string name="lower_case_auto_service_install">Install</string>
+    <string name="lower_case_auto_service_ok">Ok</string>
+    <string name="lower_case_auto_service_next">Next</string>
+    <string name="lower_case_auto_service_replace">Replace</string>
+    <string name="lower_case_auto_service_update">Update</string>
+    <string name="lower_case_auto_service_done">Done</string>
+    <string name="lower_case_auto_service_allow">Allow</string>
+    <string name="lower_case_auto_service_remove">Uninstall</string>
+    <string name="lower_case_auto_service_remove2">Remove</string>
+    <string name="lower_case_auto_service_know">Know</string>
+    <string name="lower_case_auto_service_continue">Continue</string>
+    <string name="lower_case_auto_service_fail">Fail</string>
+    <string name="lower_case_auto_service_failed">Failed</string>
+    <string name="lower_case_auto_service_failure">Failure</string>
+
+    <string name="lib_smartpm_service_label">@string/smartpm_service_label</string>
+    <string name="install_unknown_sources">安装未知应用程序</string>
+    <string name="allow_sources">允许此来源</string>
+
+</resources>

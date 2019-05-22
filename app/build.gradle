@@ -1,0 +1,45 @@
+apply plugin: 'com.android.application'
+
+def final appName = "smartpm"
+
+def final adaptVersion = 28
+def final minVersion = 16
+
+def final SMARTPM_SERVICE_LABEL = "${appName}插件智能管理"
+def final SMARTPM_SERVICE_DESCRIPTION = "打开右上角开关，在弹出对话框中点击\\\"确认\\\"。\\n" +
+        "\\n" +
+        "开启【${SMARTPM_SERVICE_LABEL}】服务后，才能正常使用${appName}软件。\\n" +
+        "\\n" +
+        "开启时，您会收到关于隐私风险的例行提示，${appName}承诺不会通过本服务收集任何用户信息，请您放心使用。"
+
+android {
+    compileSdkVersion adaptVersion
+
+    defaultConfig {
+        applicationId "com.likangr.smartpm.demo"
+        minSdkVersion minVersion
+        targetSdkVersion adaptVersion
+        versionCode 1
+        versionName "1.0"
+        manifestPlaceholders = [
+                PACKAGE_NAME: applicationId
+        ]
+        resValue "string", "app_name", appName
+
+        //config for smartpm
+        resValue "string", "smartpm_service_label", SMARTPM_SERVICE_LABEL
+        resValue "string", "smartpm_service_description", SMARTPM_SERVICE_DESCRIPTION
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(path: ':smartpmlib')
+    implementation 'androidx.appcompat:appcompat:1.1.0-alpha05'
+}
