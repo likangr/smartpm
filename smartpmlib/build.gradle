@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'com.novoda.bintray-release' // must be applied after your artifact generating plugin (eg. java / com.android.library)
 
 def final adaptVersion = 28
 def final minVersion = 16
@@ -16,15 +17,13 @@ android {
     buildTypes {
         release {
             jniDebuggable false
-            minifyEnabled true
+            minifyEnabled false
             zipAlignEnabled true
-            consumerProguardFiles 'proguard-rules.pro'
         }
         debug {
             jniDebuggable true
             minifyEnabled false
             zipAlignEnabled true
-            consumerProguardFiles 'proguard-rules.pro'
         }
     }
 }
@@ -35,4 +34,21 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${lib_version.kotlin}"
     //appcompat
     implementation 'androidx.appcompat:appcompat:1.1.0-alpha05'
+}
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.9.1'
+    }
+}
+publish {
+    userOrg = 'likangr'
+    groupId = 'com.likangr.smartpm'
+    artifactId = 'smartpm'
+    publishVersion = '1.0.0-release'
+    desc = 'A smart package manager on Android.'
+    website = 'https://github.com/likangr/smartpm'
 }
