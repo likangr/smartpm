@@ -1,11 +1,11 @@
-package com.likangr.smartpm.lib.core;
+package com.likangr.smartpm.lib;
 
 import android.app.Application;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.TextUtils;
 
-import com.likangr.smartpm.lib.exception.StringFieldEmptyException;
+import com.likangr.smartpm.lib.core.PMOperation;
+import com.likangr.smartpm.lib.core.exception.PMOperationInvalidException;
 import com.likangr.smartpm.lib.util.ApplicationHolder;
 import com.likangr.smartpm.lib.util.IntentManager;
 
@@ -22,16 +22,13 @@ public class SmartPM {
 
     public static PMOperation sCurrentRunningPMOperation;
     private static final Object INITIALISE_LOCK = new Object();
+    private static final Object PM_OPERATIONS_QUEUE_LOCK = new Object();
     private static Handler sHandler;
     private static boolean sIsInitialised = false;
 
-    public static final int FAIL_REASON_SET_LOCATION_ENABLED_USER_REJECT = 1;
-    public static final int FAIL_REASON_LOCATION_MODULE_NOT_EXIST = 2;
-    public static final int FAIL_REASON_NOT_HAS_LOCATION_PERMISSION = 3;
+    public static final int FAIL_REASON_ENABLE_INSTALL_UNKNOWN_SOURCES_USER_REJECT = 1;
+    public static final int FAIL_REASON_UNKNOWN = 2;
 
-    public static final int FAIL_REASON_WIFI_MODULE_NOT_EXIST = 4;
-    public static final int FAIL_REASON_NOT_HAS_WIFI_PERMISSION = 5;
-    public static final int FAIL_REASON_SET_WIFI_ENABLED_TIMEOUT = 7;
 
     /**
      * @param application
@@ -59,19 +56,15 @@ public class SmartPM {
     /**
      * @param pmOperation
      */
-    public static void postPMOperation(final PMOperation pmOperation) {
+    public static void postPMOperation(PMOperation pmOperation) throws PMOperationInvalidException {
         checkIsInitialised();
-        sHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                checkPMOperationIsValid(pmOperation);
-                PM_OPERATION_QUEUE.add(pmOperation);
-                if (sCurrentRunningPMOperation == null) {
-                    executeNextPMOperationIfHas();
-                }
+        synchronized (PM_OPERATIONS_QUEUE_LOCK) {
+            pmOperation.checkIsValid();
+            PM_OPERATION_QUEUE.add(pmOperation);
+            if (sCurrentRunningPMOperation == null) {
+                executeNextPMOperationIfHas();
             }
-        });
-
+        }
     }
 
     /**
@@ -84,29 +77,6 @@ public class SmartPM {
         return isPlugin ? IntentManager.runPluginPackage(packageName) : IntentManager.runIndependentPackage(packageName);
     }
 
-
-    /**
-     * @param pmOperation
-     */
-    private static void checkPMOperationIsValid(PMOperation pmOperation) {
-        if (pmOperation == null) {
-            throw new NullPointerException("PMOperation can not be null!");
-        }
-        switch (pmOperation.mOperationType) {
-            case PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE:
-                if (TextUtils.isEmpty(pmOperation.mPackageArchiveLocalPath)) {
-                    throw new StringFieldEmptyException("PMOperation mPackageArchiveLocalPath can not be empty!");
-                }
-                break;
-            case PMOperation.TYPE_PM_OPERATION_REMOVE_PACKAGE:
-                if (TextUtils.isEmpty(pmOperation.mPackageName)) {
-                    throw new StringFieldEmptyException("PMOperation mPackageName can not be empty!");
-                }
-                break;
-            default:
-                throw new UnsupportedOperationException("PMOperation mOperationType only support TYPE_PM_OPERATION_INSTALL_PACKAGE or TYPE_PM_OPERATION_REMOVE_PACKAGE!");
-        }
-    }
 
     /**
      *

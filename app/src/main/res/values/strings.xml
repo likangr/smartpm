@@ -3,10 +3,15 @@
     <string name="remove">remove</string>
     <string name="run">run</string>
     <string name="run_failed">run failed.</string>
+    <string name="need_user_assist">the following operation needs your assistance to complete.</string>
     <string name="install_succeed">install succeed.</string>
-    <string name="install_failed">install failed.</string>
+    <string name="install_failed_reject_unknown_sources">install failed,user reject install unknown sources.</string>
+    <string name="install_failed_unknown_reason">install failed,unknown reason.</string>
+    <string name="install_failed_invalid_operation">install failed,invalid operation.</string>
     <string name="remove_succeed">remove succeed.</string>
-    <string name="remove_failed">remove failed.</string>
+    <string name="remove_failed_reject_unknown_sources">remove failed,user reject install unknown sources.</string>
+    <string name="remove_failed_unknown_reason">remove failed,unknown reason.</string>
+    <string name="remove_failed_invalid_operation">remove failed,invalid operation.</string>
     <string name="operate_independent_app">operate independent app:</string>
     <string name="operate_plugin_app">operate plugin app:</string>
     <string name="notify_copy_failed">apk file copy failed.please check storage space is enough.</string>

@@ -2,7 +2,7 @@ package com.likangr.smartpm.demo;
 
 import android.app.Application;
 
-import com.likangr.smartpm.lib.core.SmartPM;
+import com.likangr.smartpm.lib.SmartPM;
 
 /**
  * @author likangren

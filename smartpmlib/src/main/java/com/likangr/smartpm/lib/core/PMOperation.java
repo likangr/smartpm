@@ -5,7 +5,10 @@ import android.app.Application;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.text.TextUtils;
 
+import com.likangr.smartpm.lib.SmartPM;
+import com.likangr.smartpm.lib.core.exception.PMOperationInvalidException;
 import com.likangr.smartpm.lib.core.guid.UserActionBridgeActivity;
 import com.likangr.smartpm.lib.util.AccessibilityUtil;
 import com.likangr.smartpm.lib.util.ApplicationHolder;
@@ -17,18 +20,20 @@ import com.likangr.smartpm.lib.util.PackageUtil;
  */
 public class PMOperation implements Runnable {
 
-    private static final String TAG = "PMOperation";
-
     public static final int TYPE_PM_OPERATION_REMOVE_PACKAGE = 1;
     public static final int TYPE_PM_OPERATION_INSTALL_PACKAGE = 2;
+    private static final String TAG = "PMOperation";
+    public String packageName;
+    public String packageArchiveLocalPath;
+    public Object extraData;
+    public int operationType;
+    public long lastUpdateTime;
+    public boolean isUpdate;
 
-    public String mPackageName;
-    public String mPackageArchiveLocalPath;
-    public Object mExtraData;
-    public int mOperationType;
-    public long mLastUpdateTime;
-    public boolean mIsUpdate;
-    private PMOperationCallback mPMOperationCallback;
+    public int failReason;
+    public boolean isNeedUserAssist;
+
+    private PMOperationCallback pmOperationCallback;
 
     private PMOperation() {
     }
@@ -43,10 +48,10 @@ public class PMOperation implements Runnable {
                                                             Object extraData,
                                                             PMOperationCallback pmOperationCallback) {
         PMOperation pmOperation = new PMOperation();
-        pmOperation.mOperationType = PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE;
-        pmOperation.mPackageArchiveLocalPath = packageArchiveLocalPath;
-        pmOperation.mExtraData = extraData;
-        pmOperation.mPMOperationCallback = pmOperationCallback;
+        pmOperation.operationType = PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE;
+        pmOperation.packageArchiveLocalPath = packageArchiveLocalPath;
+        pmOperation.extraData = extraData;
+        pmOperation.pmOperationCallback = pmOperationCallback;
         return pmOperation;
     }
 
@@ -60,10 +65,10 @@ public class PMOperation implements Runnable {
                                                            Object extraData,
                                                            PMOperationCallback pmOperationCallback) {
         PMOperation pmOperation = new PMOperation();
-        pmOperation.mOperationType = PMOperation.TYPE_PM_OPERATION_REMOVE_PACKAGE;
-        pmOperation.mPackageName = packageName;
-        pmOperation.mExtraData = extraData;
-        pmOperation.mPMOperationCallback = pmOperationCallback;
+        pmOperation.operationType = PMOperation.TYPE_PM_OPERATION_REMOVE_PACKAGE;
+        pmOperation.packageName = packageName;
+        pmOperation.extraData = extraData;
+        pmOperation.pmOperationCallback = pmOperationCallback;
         return pmOperation;
     }
 
@@ -91,8 +96,18 @@ public class PMOperation implements Runnable {
      *
      */
     private void callOnOperationStart() {
-        if (mPMOperationCallback != null) {
-            mPMOperationCallback.onPackageOperationStart(this);
+        if (pmOperationCallback != null) {
+            pmOperationCallback.onPackageOperationStart(this);
+        }
+    }
+
+    /**
+     *
+     */
+    private void callOnOperationIsNeedUserAssist(boolean isNeedUserAssist) {
+        this.isNeedUserAssist = isNeedUserAssist;
+        if (pmOperationCallback != null) {
+            pmOperationCallback.onPackageOperationIsNeedUserAssist(this);
         }
     }
 
@@ -100,26 +115,62 @@ public class PMOperation implements Runnable {
      *
      */
     private void callOnOperationSuccess() {
-        if (mPMOperationCallback != null) {
-            mPMOperationCallback.onPackageOperationSuccess(this);
+        if (pmOperationCallback != null) {
+            pmOperationCallback.onPackageOperationSuccess(this);
         }
         SmartPM.executeNextPMOperationIfHas();
     }
+
 
     /**
      *
      */
-    private void callOnOperationFail() {
-        if (mPMOperationCallback != null) {
-            mPMOperationCallback.onPackageOperationFail(this);
+    private void callOnOperationFail(int failReason) {
+        this.failReason = failReason;
+        if (pmOperationCallback != null) {
+            pmOperationCallback.onPackageOperationFail(this);
         }
         SmartPM.executeNextPMOperationIfHas();
     }
 
+    public void checkIsValid() throws PMOperationInvalidException {
+        switch (operationType) {
+            case PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE:
+                if (TextUtils.isEmpty(packageArchiveLocalPath)) {
+                    throw new PMOperationInvalidException("packageArchiveLocalPath can not be empty!");
+                }
+                Application application = ApplicationHolder.getApplication();
+
+                PackageManager pm = application.getPackageManager();
+                PackageInfo info = pm.getPackageArchiveInfo(packageArchiveLocalPath, PackageManager.GET_ACTIVITIES);
+                if (info == null || info.applicationInfo == null) {
+                    throw new PMOperationInvalidException("The file " + packageArchiveLocalPath + " is not a valid apk!");
+                }
+
+                packageName = info.applicationInfo.packageName;
+
+                PackageInfo installedPackageInfo = PackageUtil.getInstalledPackageInfo(packageName);
+                if (installedPackageInfo != null) {
+                    isUpdate = true;
+                    lastUpdateTime = installedPackageInfo.lastUpdateTime;
+                }
+                break;
+            case PMOperation.TYPE_PM_OPERATION_REMOVE_PACKAGE:
+                if (TextUtils.isEmpty(packageName)) {
+                    throw new PMOperationInvalidException("packageName can not be empty!");
+                }
+                if (!PackageUtil.packageIsInstalled(packageName)) {
+                    throw new PMOperationInvalidException(packageName + " is not installed!");
+                }
+                break;
+            default:
+                throw new PMOperationInvalidException("operationType only support TYPE_PM_OPERATION_INSTALL_PACKAGE or TYPE_PM_OPERATION_REMOVE_PACKAGE!");
+        }
+    }
 
     @Override
     public void run() {
-        if (mOperationType == TYPE_PM_OPERATION_INSTALL_PACKAGE &&
+        if (operationType == TYPE_PM_OPERATION_INSTALL_PACKAGE &&
                 !PackageUtil.canRequestPackageInstalls()) {
             IntentManager.gotoUserActionBridgeActivity(
                     UserActionBridgeActivity.USER_ACTION_CODE_ENABLE_INSTALL_UNKNOWN_SOURCES,
@@ -131,7 +182,7 @@ public class PMOperation implements Runnable {
 
                         @Override
                         public void onUserActionDoneIsNotWeExcepted() {
-                            callOnOperationFail();
+                            callOnOperationFail(SmartPM.FAIL_REASON_ENABLE_INSTALL_UNKNOWN_SOURCES_USER_REJECT);
                         }
                     });
         } else {
@@ -144,46 +195,26 @@ public class PMOperation implements Runnable {
      */
     private void performOperation() {
 
-        if (!checkOperationIsValid()) {
-            return;
-        }
-
         if (AccessibilityUtil.checkIsHasAccessibility()) {
+            callOnOperationIsNeedUserAssist(false);
             performRealOperation();
         } else {
             IntentManager.gotoUserActionBridgeActivity(UserActionBridgeActivity.USER_ACTION_CODE_ENABLE_ACCESSIBILITY_SERVICE,
                     new UserActionBridgeActivity.OnUserActionDoneCallback() {
                         @Override
                         public void onUserActionDoneIsWeExcepted() {
+                            callOnOperationIsNeedUserAssist(false);
                             performRealOperation();
                         }
 
                         @Override
                         public void onUserActionDoneIsNotWeExcepted() {
                             //user manually.
+                            callOnOperationIsNeedUserAssist(true);
                             performRealOperation();
                         }
                     });
         }
-    }
-
-    /**
-     * @return
-     */
-    private boolean checkOperationIsValid() {
-        boolean isValid;
-        switch (mOperationType) {
-            case TYPE_PM_OPERATION_INSTALL_PACKAGE:
-                isValid = checkInstallPackageOperationIsValid();
-                break;
-            case TYPE_PM_OPERATION_REMOVE_PACKAGE:
-                isValid = checkRemovePackageOperationIsValid();
-                break;
-            default:
-                isValid = false;
-                break;
-        }
-        return isValid;
     }
 
     /**
@@ -192,12 +223,12 @@ public class PMOperation implements Runnable {
     private void performRealOperation() {
         callOnOperationStart();
         Application application = ApplicationHolder.getApplication();
-        switch (mOperationType) {
+        switch (operationType) {
             case TYPE_PM_OPERATION_INSTALL_PACKAGE:
-                IntentManager.gotoInstallPackageActivity(application, mPackageArchiveLocalPath);
+                IntentManager.gotoInstallPackageActivity(application, packageArchiveLocalPath);
                 break;
             case TYPE_PM_OPERATION_REMOVE_PACKAGE:
-                IntentManager.gotoRemovePackageActivity(application, mPackageName);
+                IntentManager.gotoRemovePackageActivity(application, packageName);
                 break;
             default:
                 break;
@@ -225,20 +256,20 @@ public class PMOperation implements Runnable {
             public void onActivityResumed(Activity activity) {
                 application.unregisterActivityLifecycleCallbacks(this);
 
-                switch (mOperationType) {
+                switch (operationType) {
                     case PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE:
-                        PackageInfo installedPackageInfo = PackageUtil.getInstalledPackageInfo(mPackageName);
-                        if (installedPackageInfo != null && mLastUpdateTime != installedPackageInfo.lastUpdateTime) {
+                        PackageInfo installedPackageInfo = PackageUtil.getInstalledPackageInfo(packageName);
+                        if (installedPackageInfo != null && lastUpdateTime != installedPackageInfo.lastUpdateTime) {
                             callOnOperationSuccess();
                         } else {
-                            callOnOperationFail();
+                            callOnOperationFail(SmartPM.FAIL_REASON_UNKNOWN);
                         }
                         break;
                     case PMOperation.TYPE_PM_OPERATION_REMOVE_PACKAGE:
-                        if (!PackageUtil.packageIsInstalled(mPackageName)) {
+                        if (!PackageUtil.packageIsInstalled(packageName)) {
                             callOnOperationSuccess();
                         } else {
-                            callOnOperationFail();
+                            callOnOperationFail(SmartPM.FAIL_REASON_UNKNOWN);
                         }
                         break;
                     default:
@@ -269,41 +300,19 @@ public class PMOperation implements Runnable {
         });
     }
 
-    /**
-     *
-     */
-    private boolean checkInstallPackageOperationIsValid() {
-        Application application = ApplicationHolder.getApplication();
 
-        PackageManager pm = application.getPackageManager();
-        PackageInfo info = pm.getPackageArchiveInfo(mPackageArchiveLocalPath, PackageManager.GET_ACTIVITIES);
-        if (info == null || info.applicationInfo == null) {
-            callOnOperationFail();
-            return false;
-        }
-
-        mPackageName = info.applicationInfo.packageName;
-
-        PackageInfo installedPackageInfo = PackageUtil.getInstalledPackageInfo(mPackageName);
-        if (installedPackageInfo != null) {
-            mIsUpdate = true;
-            mLastUpdateTime = installedPackageInfo.lastUpdateTime;
-        }
-        return true;
+    @Override
+    public String toString() {
+        return "PMOperation{" +
+                "packageName='" + packageName + '\'' +
+                ", packageArchiveLocalPath='" + packageArchiveLocalPath + '\'' +
+                ", extraData=" + extraData +
+                ", operationType=" + operationType +
+                ", lastUpdateTime=" + lastUpdateTime +
+                ", isUpdate=" + isUpdate +
+                ", pmOperationCallback=" + pmOperationCallback +
+                '}';
     }
-
-    /**
-     *
-     */
-    private boolean checkRemovePackageOperationIsValid() {
-
-        if (!PackageUtil.packageIsInstalled(mPackageName)) {
-            callOnOperationFail();
-            return false;
-        }
-        return true;
-    }
-
 
     /**
      *
@@ -317,24 +326,16 @@ public class PMOperation implements Runnable {
         /**
          * @param pmOperation
          */
+        void onPackageOperationIsNeedUserAssist(PMOperation pmOperation);
+
+        /**
+         * @param pmOperation
+         */
         void onPackageOperationSuccess(PMOperation pmOperation);
 
         /**
          * @param pmOperation
          */
         void onPackageOperationFail(PMOperation pmOperation);
-    }
-
-    @Override
-    public String toString() {
-        return "PMOperation{" +
-                "mPackageName='" + mPackageName + '\'' +
-                ", mPackageArchiveLocalPath='" + mPackageArchiveLocalPath + '\'' +
-                ", mExtraData=" + mExtraData +
-                ", mOperationType=" + mOperationType +
-                ", mLastUpdateTime=" + mLastUpdateTime +
-                ", mIsUpdate=" + mIsUpdate +
-                ", mPMOperationCallback=" + mPMOperationCallback +
-                '}';
     }
 }

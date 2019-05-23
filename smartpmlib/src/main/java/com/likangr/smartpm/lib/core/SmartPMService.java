@@ -5,6 +5,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.likangr.smartpm.lib.R;
+import com.likangr.smartpm.lib.SmartPM;
 import com.likangr.smartpm.lib.util.ApplicationHolder;
 import com.likangr.smartpm.lib.util.Logger;
 

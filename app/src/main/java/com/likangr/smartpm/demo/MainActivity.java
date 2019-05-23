@@ -3,13 +3,14 @@ package com.likangr.smartpm.demo;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.likangr.smartpm.lib.SmartPM;
 import com.likangr.smartpm.lib.core.PMOperation;
-import com.likangr.smartpm.lib.core.SmartPM;
+import com.likangr.smartpm.lib.core.exception.PMOperationInvalidException;
+import com.likangr.smartpm.lib.util.ToastUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements PMOperation.PMOpe
             copyApk(false);
         } catch (IOException e) {
             e.printStackTrace();
-            Toast.makeText(this, getString(R.string.notify_copy_failed), Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, getString(R.string.notify_copy_failed));
             finish();
         }
     }
@@ -67,25 +68,35 @@ public class MainActivity extends AppCompatActivity implements PMOperation.PMOpe
 
 
     public void installApp(boolean isIndependent) {
-        SmartPM.postPMOperation(
-                PMOperation.createInstallPackageOperation(
-                        getFilesDir()
-                                + File.separator
-                                + getTestAppFileName(isIndependent),
-                        this));
+        try {
+            SmartPM.postPMOperation(
+                    PMOperation.createInstallPackageOperation(
+                            getFilesDir()
+                                    + File.separator
+                                    + getTestAppFileName(isIndependent),
+                            this));
+        } catch (PMOperationInvalidException e) {
+            e.printStackTrace();
+            ToastUtil.showShort(this, getString(R.string.install_failed_invalid_operation));
+        }
     }
 
 
     public void removeApp(boolean isIndependent) {
-        SmartPM.postPMOperation(
-                PMOperation.createRemovePackageOperation(
-                        getTestAppPackageName(isIndependent),
-                        this));
+        try {
+            SmartPM.postPMOperation(
+                    PMOperation.createRemovePackageOperation(
+                            getTestAppPackageName(isIndependent),
+                            this));
+        } catch (PMOperationInvalidException e) {
+            e.printStackTrace();
+            ToastUtil.showShort(this, getString(R.string.remove_failed_invalid_operation));
+        }
     }
 
     public void runApp(boolean isIndependent) {
         if (!SmartPM.runPackage(getTestAppPackageName(isIndependent), !isIndependent)) {
-            Toast.makeText(this, getString(R.string.run_failed), Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, getString(R.string.run_failed));
         }
     }
 
@@ -95,23 +106,37 @@ public class MainActivity extends AppCompatActivity implements PMOperation.PMOpe
     }
 
     @Override
+    public void onPackageOperationIsNeedUserAssist(PMOperation pmOperation) {
+        if (pmOperation.isNeedUserAssist) {
+            ToastUtil.showShort(this, getString(R.string.need_user_assist));
+        }
+    }
+
+    @Override
     public void onPackageOperationSuccess(PMOperation pmOperation) {
         setPbVisible(false);
-        Toast.makeText(this,
-                pmOperation.mOperationType == PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE ?
+        ToastUtil.showShort(this,
+                pmOperation.operationType == PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE ?
                         getString(R.string.install_succeed) :
-                        getString(R.string.remove_succeed),
-                Toast.LENGTH_SHORT).show();
+                        getString(R.string.remove_succeed));
     }
 
     @Override
     public void onPackageOperationFail(PMOperation pmOperation) {
         setPbVisible(false);
-        Toast.makeText(this,
-                pmOperation.mOperationType == PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE ?
-                        getString(R.string.install_failed) :
-                        getString(R.string.remove_failed),
-                Toast.LENGTH_SHORT).show();
+        int failReason = pmOperation.failReason;
+        if (failReason == SmartPM.FAIL_REASON_ENABLE_INSTALL_UNKNOWN_SOURCES_USER_REJECT) {
+            ToastUtil.showShort(this,
+                    pmOperation.operationType == PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE ?
+                            getString(R.string.install_failed_reject_unknown_sources) :
+                            getString(R.string.remove_failed_reject_unknown_sources));
+        } else if (failReason == SmartPM.FAIL_REASON_UNKNOWN) {
+            ToastUtil.showShort(this,
+                    pmOperation.operationType == PMOperation.TYPE_PM_OPERATION_INSTALL_PACKAGE ?
+                            getString(R.string.install_failed_unknown_reason) :
+                            getString(R.string.remove_failed_unknown_reason));
+        }
+
     }
 
     private String getTestAppPackageName(boolean isIndependent) {

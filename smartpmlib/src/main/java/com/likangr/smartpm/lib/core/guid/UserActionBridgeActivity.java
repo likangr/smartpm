@@ -11,7 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.likangr.smartpm.lib.R;
-import com.likangr.smartpm.lib.core.SmartPM;
+import com.likangr.smartpm.lib.SmartPM;
 import com.likangr.smartpm.lib.util.AccessibilityUtil;
 import com.likangr.smartpm.lib.util.IntentManager;
 import com.likangr.smartpm.lib.util.PackageUtil;
