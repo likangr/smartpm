@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.likangr.smartpm.lib.SmartPM;
 import com.likangr.smartpm.lib.core.PMOperation;
 import com.likangr.smartpm.lib.core.exception.PMOperationInvalidException;
-import com.likangr.smartpm.lib.util.ToastUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;

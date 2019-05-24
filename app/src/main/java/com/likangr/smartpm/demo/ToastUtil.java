@@ -1,7 +1,9 @@
-package com.likangr.smartpm.lib.util;
+package com.likangr.smartpm.demo;
 
 import android.content.Context;
 import android.widget.Toast;
+
+import com.likangr.smartpm.lib.util.ToastHooker;
 
 /**
  * Toast统一管理类
