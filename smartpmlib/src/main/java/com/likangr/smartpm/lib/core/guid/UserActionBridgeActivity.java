@@ -68,8 +68,8 @@ public class UserActionBridgeActivity extends AppCompatActivity {
                     invokeCallback(false);
                 } else {
                     sendCheckUserHasDoneSignal();
-                    UserActionGuideToast.show(this, "需要先开启" + getString(R.string.lib_smartpm_service_label),
-                            "操作指南：\n找到并开启" + getString(R.string.lib_smartpm_service_label), Toast.LENGTH_LONG);
+                    UserActionGuideToast.show(this, "需要先开启" + getString(R.string.smartpm_service_label),
+                            "操作指南：\n找到并开启" + getString(R.string.smartpm_service_label), Toast.LENGTH_LONG);
                 }
                 break;
             case USER_ACTION_CODE_ENABLE_INSTALL_UNKNOWN_SOURCES:

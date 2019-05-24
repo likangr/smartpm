@@ -24,9 +24,9 @@ android {
         manifestPlaceholders = [
                 PACKAGE_NAME: applicationId
         ]
-        resValue "string", "app_name", appName
 
         //config for smartpm
+        resValue "string", "app_name", appName
         resValue "string", "smartpm_service_label", SMARTPM_SERVICE_LABEL
         resValue "string", "smartpm_service_description", SMARTPM_SERVICE_DESCRIPTION
     }
@@ -40,6 +40,6 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation project(path: ':smartpmlib')
+    implementation 'com.likangr.smartpm:smartpm:1.0.0-release'
     implementation 'androidx.appcompat:appcompat:1.1.0-alpha05'
 }
